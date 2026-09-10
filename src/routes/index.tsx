@@ -15,12 +15,14 @@ type SearchState = {
 };
 
 export const Route = createFileRoute("/")({
-  validateSearch: (search: Record<string, unknown>): SearchState => ({
-    q: typeof search.q === "string" ? search.q : "",
-    category: typeof search.category === "string" ? search.category : "",
-    game: typeof search.game === "string" ? search.game : "",
-    sort: SORT_OPTIONS.includes(search.sort as SortOption) ? (search.sort as SortOption) : "newest",
-    page: Number(search.page) > 0 ? Number(search.page) : 1,
+  validateSearch: (search: Record<string, unknown>): Partial<SearchState> => ({
+    q: typeof search["q"] === "string" ? (search["q"] as string) : undefined,
+    category: typeof search["category"] === "string" ? (search["category"] as string) : undefined,
+    game: typeof search["game"] === "string" ? (search["game"] as string) : undefined,
+    sort: SORT_OPTIONS.includes(search["sort"] as SortOption)
+      ? (search["sort"] as SortOption)
+      : undefined,
+    page: Number(search["page"]) > 1 ? Number(search["page"]) : undefined,
   }),
   head: () => ({
     meta: [
