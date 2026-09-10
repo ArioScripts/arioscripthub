@@ -1,21 +1,21 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { ChevronLeft, ChevronRight, Search, Terminal } from "lucide-react";
 import { getFilters, listScripts, SORT_OPTIONS, type SortOption } from "@/lib/public.functions";
 import { SiteShell } from "@/components/site-shell";
 import { ScriptCard } from "@/components/script-card";
 
 type SearchState = {
-  q: string;
-  category: string;
-  game: string;
-  sort: SortOption;
-  page: number;
+  q?: string | undefined;
+  category?: string | undefined;
+  game?: string | undefined;
+  sort?: SortOption | undefined;
+  page?: number | undefined;
 };
 
 export const Route = createFileRoute("/")({
-  validateSearch: (search: Record<string, unknown>): Partial<SearchState> => ({
+  validateSearch: (search: Record<string, unknown>): SearchState => ({
     q: typeof search["q"] === "string" ? (search["q"] as string) : undefined,
     category: typeof search["category"] === "string" ? (search["category"] as string) : undefined,
     game: typeof search["game"] === "string" ? (search["game"] as string) : undefined,
@@ -52,40 +52,37 @@ const SORT_LABELS: Record<SortOption, string> = {
 };
 
 function Discover() {
-  const search = Route.useSearch();
+  const raw = Route.useSearch();
   const navigate = useNavigate({ from: "/" });
-  const [term, setTerm] = useState(search.q);
 
-  useEffect(() => setTerm(search.q), [search.q]);
+  const q = raw.q ?? "";
+  const category = raw.category ?? "";
+  const game = raw.game ?? "";
+  const sort = raw.sort ?? "newest";
+  const page = raw.page ?? 1;
+
+  const [term, setTerm] = useState(q);
+  useEffect(() => setTerm(q), [q]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
-      if (term !== search.q) {
-        navigate({ search: (prev) => ({ ...prev, q: term, page: 1 }) });
+      if (term !== q) {
+        navigate({ search: (prev) => ({ ...prev, q: term || undefined, page: undefined }) });
       }
     }, 350);
     return () => window.clearTimeout(timer);
-  }, [term, search.q, navigate]);
+  }, [term, q, navigate]);
 
   const filters = useQuery({ queryKey: ["filters"], queryFn: () => getFilters(), staleTime: 300_000 });
   const results = useQuery({
-    queryKey: ["scripts", search],
+    queryKey: ["scripts", { q, category, game, sort, page }],
     placeholderData: keepPreviousData,
     queryFn: () =>
-      listScripts({
-        data: {
-          search: search.q,
-          category: search.category,
-          game: search.game,
-          sort: search.sort,
-          page: search.page,
-          perPage: 12,
-        },
-      }),
+      listScripts({ data: { search: q, category, game, sort, page, perPage: 12 } }),
   });
 
-  const setFilter = (patch: Partial<SearchState>) =>
-    navigate({ search: (prev) => ({ ...prev, ...patch, page: patch.page ?? 1 }) });
+  const setFilter = (patch: SearchState) =>
+    navigate({ search: (prev) => ({ ...prev, page: undefined, ...patch }) });
 
   const data = results.data;
 
@@ -97,7 +94,7 @@ function Discover() {
             <Terminal className="size-3" /> script database
           </p>
           <h1 className="mt-5 max-w-3xl text-4xl font-bold leading-[1.05] tracking-tight text-foreground sm:text-6xl">
-            Every script you need, <span className="text-primary text-glow">one clean loader.</span>
+            Every script you need, <span className="text-glow text-primary">one clean loader.</span>
           </h1>
           <p className="mt-4 max-w-xl text-base text-muted-foreground">
             Verified, tested and updated. Copy the Lua straight from the viewer or grab the .lua file.
@@ -120,19 +117,25 @@ function Discover() {
         <div className="flex flex-wrap items-center gap-2">
           <FilterSelect
             label="Category"
-            value={search.category}
-            onChange={(value) => setFilter({ category: value })}
-            options={(filters.data?.categories ?? []).map((c) => ({ value: c.slug, label: c.name }))}
+            value={category}
+            onChange={(value) => setFilter({ category: value || undefined })}
+            options={(filters.data?.categories ?? []).map((item) => ({
+              value: item.slug,
+              label: item.name,
+            }))}
           />
           <FilterSelect
             label="Game"
-            value={search.game}
-            onChange={(value) => setFilter({ game: value })}
-            options={(filters.data?.games ?? []).map((g) => ({ value: g.slug, label: g.name }))}
+            value={game}
+            onChange={(value) => setFilter({ game: value || undefined })}
+            options={(filters.data?.games ?? []).map((item) => ({
+              value: item.slug,
+              label: item.name,
+            }))}
           />
           <FilterSelect
             label="Sort"
-            value={search.sort}
+            value={sort}
             allowAll={false}
             onChange={(value) => setFilter({ sort: value as SortOption })}
             options={SORT_OPTIONS.map((option) => ({ value: option, label: SORT_LABELS[option] }))}
@@ -157,10 +160,12 @@ function Discover() {
         ) : (
           <div className="mt-10 rounded-xl border border-border bg-card p-12 text-center">
             <p className="text-lg font-semibold text-foreground">No scripts matched</p>
-            <p className="mt-1 text-sm text-muted-foreground">Try clearing a filter or searching something broader.</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Try clearing a filter or searching something broader.
+            </p>
             <Link
               to="/"
-              search={{ q: "", category: "", game: "", sort: "newest", page: 1 }}
+              search={{}}
               className="mt-5 inline-flex rounded-md border border-border px-4 py-2 text-sm text-foreground hover:border-primary/50"
             >
               Reset filters
@@ -169,10 +174,10 @@ function Discover() {
         )}
 
         {data && data.pageCount > 1 && (
-          <div className="mt-10 flex items-center justify-center gap-2">
+          <div className="mt-10 flex flex-wrap items-center justify-center gap-2">
             <PageButton
-              disabled={search.page <= 1}
-              onClick={() => setFilter({ page: search.page - 1 })}
+              disabled={page <= 1}
+              onClick={() => setFilter({ page: page - 1 })}
               label="Previous page"
             >
               <ChevronLeft className="size-4" />
@@ -180,32 +185,29 @@ function Discover() {
             {Array.from({ length: data.pageCount })
               .map((_, index) => index + 1)
               .filter(
-                (page) =>
-                  page === 1 ||
-                  page === data.pageCount ||
-                  Math.abs(page - search.page) <= 1,
+                (item) => item === 1 || item === data.pageCount || Math.abs(item - page) <= 1,
               )
-              .map((page, index, pages) => (
-                <span key={page} className="flex items-center gap-2">
-                  {index > 0 && pages[index - 1]! < page - 1 && (
+              .map((item, index, pages) => (
+                <span key={item} className="flex items-center gap-2">
+                  {index > 0 && pages[index - 1]! < item - 1 && (
                     <span className="font-mono text-xs text-muted-foreground">…</span>
                   )}
                   <button
                     type="button"
-                    onClick={() => setFilter({ page })}
+                    onClick={() => setFilter({ page: item })}
                     className={
-                      page === search.page
+                      item === page
                         ? "rounded-md bg-primary px-3 py-1.5 font-mono text-xs font-bold text-primary-foreground"
                         : "rounded-md border border-border px-3 py-1.5 font-mono text-xs text-muted-foreground hover:text-foreground"
                     }
                   >
-                    {page}
+                    {item}
                   </button>
                 </span>
               ))}
             <PageButton
-              disabled={search.page >= data.pageCount}
-              onClick={() => setFilter({ page: search.page + 1 })}
+              disabled={page >= data.pageCount}
+              onClick={() => setFilter({ page: page + 1 })}
               label="Next page"
             >
               <ChevronRight className="size-4" />
@@ -232,7 +234,9 @@ function FilterSelect({
 }) {
   return (
     <label className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2">
-      <span className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">{label}</span>
+      <span className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
+        {label}
+      </span>
       <select
         value={value}
         onChange={(event) => onChange(event.target.value)}
@@ -255,7 +259,7 @@ function PageButton({
   disabled,
   label,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
   onClick: () => void;
   disabled: boolean;
   label: string;
