@@ -121,12 +121,12 @@ export const getFilters = createServerFn({ method: "GET" }).handler(async () => 
 });
 
 export const getSiteSettings = createServerFn({ method: "GET" }).handler(async () => {
-  const supabase = publicClient();
   const { data } = await publicClient()
     .from("site_settings")
-    .select("site_name, tagline, announcement, announcement_enabled, discord_url, youtube_url, twitter_url, maintenance_mode")
+    .select(
+      "site_name, tagline, announcement, announcement_enabled, discord_url, youtube_url, twitter_url, maintenance_mode",
+    )
     .maybeSingle();
-  void supabase;
   return { settings: data };
 });
 
