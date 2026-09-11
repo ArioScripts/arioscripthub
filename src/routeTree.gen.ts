@@ -10,12 +10,19 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthRouteImport } from './routes/auth'
 import { Route as CategoriesRouteImport } from './routes/categories'
 import { Route as CategorySlugRouteImport } from './routes/category.$slug'
+import { Route as ScriptsSlugRouteImport } from './routes/scripts.$slug'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CategoriesRoute = CategoriesRouteImport.update({
@@ -28,35 +35,55 @@ const CategorySlugRoute = CategorySlugRouteImport.update({
   path: '/category/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ScriptsSlugRoute = ScriptsSlugRouteImport.update({
+  id: '/scripts/$slug',
+  path: '/scripts/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
   '/categories': typeof CategoriesRoute
   '/category/$slug': typeof CategorySlugRoute
+  '/scripts/$slug': typeof ScriptsSlugRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
   '/categories': typeof CategoriesRoute
   '/category/$slug': typeof CategorySlugRoute
+  '/scripts/$slug': typeof ScriptsSlugRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
   '/categories': typeof CategoriesRoute
   '/category/$slug': typeof CategorySlugRoute
+  '/scripts/$slug': typeof ScriptsSlugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/categories' | '/category/$slug'
+  fullPaths:
+    '/' | '/auth' | '/categories' | '/category/$slug' | '/scripts/$slug'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/categories' | '/category/$slug'
-  id: '__root__' | '/' | '/categories' | '/category/$slug'
+  to: '/' | '/auth' | '/categories' | '/category/$slug' | '/scripts/$slug'
+  id:
+    | '__root__'
+    | '/'
+    | '/auth'
+    | '/categories'
+    | '/category/$slug'
+    | '/scripts/$slug'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthRoute: typeof AuthRoute
   CategoriesRoute: typeof CategoriesRoute
   CategorySlugRoute: typeof CategorySlugRoute
+  ScriptsSlugRoute: typeof ScriptsSlugRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -66,6 +93,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/categories': {
@@ -82,13 +116,22 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CategorySlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/scripts/$slug': {
+      id: '/scripts/$slug'
+      path: '/scripts/$slug'
+      fullPath: '/scripts/$slug'
+      preLoaderRoute: typeof ScriptsSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthRoute: AuthRoute,
   CategoriesRoute: CategoriesRoute,
   CategorySlugRoute: CategorySlugRoute,
+  ScriptsSlugRoute: ScriptsSlugRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
