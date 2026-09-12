@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { ExternalLink, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { logAdminAction } from "@/lib/admin.functions";
@@ -332,6 +332,28 @@ function AdminScripts() {
                   <div className="flex justify-end gap-1">
                     <button
                       type="button"
+                      onClick={() => toggleFlag.mutate({ script, field: "is_published" })}
+                      className="rounded-md border border-border px-2 py-1 font-mono text-[11px] text-muted-foreground hover:text-primary"
+                    >
+                      {script.is_published ? "Unpublish" : "Publish"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => toggleFlag.mutate({ script, field: "is_verified" })}
+                      className="rounded-md border border-border px-2 py-1 font-mono text-[11px] text-muted-foreground hover:text-primary"
+                    >
+                      {script.is_verified ? "Unverify" : "Verify"}
+                    </button>
+                    <Link
+                      to="/scripts/$slug"
+                      params={{ slug: script.slug }}
+                      aria-label="View script"
+                      className="rounded-md p-2 text-muted-foreground hover:text-primary"
+                    >
+                      <ExternalLink className="size-4" />
+                    </Link>
+                    <button
+                      type="button"
                       onClick={() => startEdit(script)}
                       aria-label="Edit script"
                       className="rounded-md p-2 text-muted-foreground hover:text-primary"
@@ -352,6 +374,27 @@ function AdminScripts() {
                 </td>
               </tr>
             ))}
+            {!scripts.isLoading && (scripts.data ?? []).length === 0 && (
+              <tr>
+                <td colSpan={5} className="px-4 py-14 text-center">
+                  <p className="text-sm font-semibold text-foreground">No scripts yet</p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Add your first script and it appears on the public site right away.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditing(null);
+                      setForm({ ...EMPTY });
+                      setOpen(true);
+                    }}
+                    className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground"
+                  >
+                    <Plus className="size-4" /> New script
+                  </button>
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
