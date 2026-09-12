@@ -1,13 +1,14 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { Json } from "@/integrations/supabase/types";
 
 type AuthedContext = {
-  supabase: ReturnType<typeof requireSupabaseAuth> extends never ? never : any;
+  supabase: { rpc: (name: "has_role", args: { _user_id: string; _role: "admin" }) => PromiseLike<{ data: unknown; error: unknown }> };
   userId: string;
 };
 
-async function assertAdmin(context: { supabase: any; userId: string }) {
+async function assertAdmin(context: AuthedContext) {
   const { data, error } = await context.supabase.rpc("has_role", {
     _user_id: context.userId,
     _role: "admin",
@@ -20,7 +21,7 @@ async function writeAudit(
   action: string,
   targetType: string,
   targetId: string,
-  details: Record<string, unknown> = {},
+  details: Json = {},
 ) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   await supabaseAdmin.from("admin_audit_log").insert({
@@ -185,6 +186,12 @@ export const logAdminAction = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     await assertAdmin(context as AuthedContext);
-    await writeAudit(context.userId, data.action, data.targetType, data.targetId, data.details);
+    await writeAudit(
+      context.userId,
+      data.action,
+      data.targetType,
+      data.targetId,
+      data.details as Json,
+    );
     return { ok: true };
   });
