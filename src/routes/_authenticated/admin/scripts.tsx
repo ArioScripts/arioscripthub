@@ -130,6 +130,32 @@ function AdminScripts() {
     onError: (error: Error) => toast.error(error.message),
   });
 
+  const toggleFlag = useMutation({
+    mutationFn: async ({
+      script,
+      field,
+    }: {
+      script: ScriptRow;
+      field: "is_published" | "is_verified";
+    }) => {
+      const next = !script[field];
+      const { error } = await supabase.from("scripts").update({ [field]: next }).eq("id", script.id);
+      if (error) throw new Error(error.message);
+      await logAdminAction({
+        data: {
+          action: `script.${field === "is_published" ? (next ? "publish" : "unpublish") : next ? "verify" : "unverify"}`,
+          targetType: "script",
+          targetId: script.id,
+        },
+      });
+    },
+    onSuccess: () => {
+      toast.success("Script updated");
+      void queryClient.invalidateQueries({ queryKey: ["admin-scripts"] });
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
   const startEdit = (script: ScriptRow) => {
     setEditing(script);
     setForm({
