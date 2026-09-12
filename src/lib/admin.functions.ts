@@ -186,6 +186,12 @@ export const logAdminAction = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     await assertAdmin(context as AuthedContext);
-    await writeAudit(context.userId, data.action, data.targetType, data.targetId, data.details);
+    await writeAudit(
+      context.userId,
+      data.action,
+      data.targetType,
+      data.targetId,
+      data.details as Json,
+    );
     return { ok: true };
   });
