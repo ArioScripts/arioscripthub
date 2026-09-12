@@ -181,11 +181,23 @@ function AdminScripts() {
             onChange={(v) => setForm({ ...form, slug: v })}
             placeholder={slugify(form.title)}
           />
-          <Text
-            label="Thumbnail URL"
-            value={form.thumbnail_url ?? ""}
-            onChange={(v) => setForm({ ...form, thumbnail_url: v })}
-          />
+          <div className="sm:col-span-2">
+            <ImageUploadField
+              label="Thumbnail"
+              hint="Take a photo or pick one from your phone."
+              values={form.thumbnail_url ? [form.thumbnail_url] : []}
+              onChange={(v) => setForm({ ...form, thumbnail_url: v[0] ?? "" })}
+            />
+          </div>
+          <div className="sm:col-span-2">
+            <ImageUploadField
+              label="Screenshots"
+              hint="Add as many as you like."
+              multiple
+              values={form.images}
+              onChange={(v) => setForm({ ...form, images: v })}
+            />
+          </div>
           <Text
             label="YouTube URL"
             value={form.youtube_url ?? ""}
