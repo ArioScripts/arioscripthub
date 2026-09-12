@@ -2,12 +2,9 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-type AuthedContext = {
-  supabase: ReturnType<typeof requireSupabaseAuth> extends never ? never : any;
-  userId: string;
-};
+type AuthedContext = { supabase: { rpc: (name: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: unknown }> }; userId: string };
 
-async function assertAdmin(context: { supabase: any; userId: string }) {
+async function assertAdmin(context: AuthedContext) {
   const { data, error } = await context.supabase.rpc("has_role", {
     _user_id: context.userId,
     _role: "admin",
