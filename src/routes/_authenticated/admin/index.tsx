@@ -1,6 +1,37 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { FileCode2, Flag, FolderTree, Settings, Users } from "lucide-react";
 import { getAdminStats } from "@/lib/admin.functions";
+
+const QUICK_ACTIONS = [
+  { to: "/admin/scripts", label: "Add or edit scripts", icon: FileCode2 },
+  { to: "/admin/categories", label: "Manage categories", icon: FolderTree },
+  { to: "/admin/reports", label: "Review reports", icon: Flag },
+  { to: "/admin/users", label: "Manage users", icon: Users },
+  { to: "/admin/settings", label: "Site settings", icon: Settings },
+] as const;
+
+function QuickActions() {
+  return (
+    <section>
+      <h2 className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
+        Quick actions
+      </h2>
+      <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {QUICK_ACTIONS.map((action) => (
+          <Link
+            key={action.to}
+            to={action.to}
+            className="flex items-center gap-3 rounded-xl border border-border bg-card p-4 text-sm font-medium text-foreground hover:border-primary/50 hover:text-primary"
+          >
+            <action.icon className="size-4 text-primary" />
+            {action.label}
+          </Link>
+        ))}
+      </div>
+    </section>
+  );
+}
 
 export const Route = createFileRoute("/_authenticated/admin/")({
   component: AdminOverview,
