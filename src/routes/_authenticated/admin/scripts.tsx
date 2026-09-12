@@ -35,6 +35,7 @@ const EMPTY: Omit<ScriptRow, "id" | "copy_count" | "download_count"> = {
   description: "",
   code: "",
   thumbnail_url: "",
+  images: [],
   youtube_url: "",
   tags: [],
   category_id: null,
@@ -62,7 +63,7 @@ function AdminScripts() {
       const { data, error } = await supabase
         .from("scripts")
         .select(
-          "id, title, slug, description, code, thumbnail_url, youtube_url, tags, category_id, game_id, is_published, is_verified, copy_count, download_count",
+          "id, title, slug, description, code, thumbnail_url, images, youtube_url, tags, category_id, game_id, is_published, is_verified, copy_count, download_count",
         )
         .order("created_at", { ascending: false });
       if (error) throw new Error(error.message);
@@ -137,6 +138,7 @@ function AdminScripts() {
       description: script.description ?? "",
       code: script.code,
       thumbnail_url: script.thumbnail_url ?? "",
+      images: script.images ?? [],
       youtube_url: script.youtube_url ?? "",
       tags: script.tags,
       category_id: script.category_id,
