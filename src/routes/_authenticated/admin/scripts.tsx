@@ -5,6 +5,7 @@ import { Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { logAdminAction } from "@/lib/admin.functions";
+import { ImageUploadField } from "@/components/image-upload-field";
 
 export const Route = createFileRoute("/_authenticated/admin/scripts")({
   component: AdminScripts,
@@ -17,6 +18,7 @@ type ScriptRow = {
   description: string | null;
   code: string;
   thumbnail_url: string | null;
+  images: string[];
   youtube_url: string | null;
   tags: string[];
   category_id: string | null;
