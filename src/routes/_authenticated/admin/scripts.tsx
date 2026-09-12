@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { ExternalLink, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { logAdminAction } from "@/lib/admin.functions";
+import { ImageUploadField } from "@/components/image-upload-field";
 
 export const Route = createFileRoute("/_authenticated/admin/scripts")({
   component: AdminScripts,
@@ -17,6 +18,7 @@ type ScriptRow = {
   description: string | null;
   code: string;
   thumbnail_url: string | null;
+  images: string[];
   youtube_url: string | null;
   tags: string[];
   category_id: string | null;
@@ -33,6 +35,7 @@ const EMPTY: Omit<ScriptRow, "id" | "copy_count" | "download_count"> = {
   description: "",
   code: "",
   thumbnail_url: "",
+  images: [],
   youtube_url: "",
   tags: [],
   category_id: null,
@@ -60,7 +63,7 @@ function AdminScripts() {
       const { data, error } = await supabase
         .from("scripts")
         .select(
-          "id, title, slug, description, code, thumbnail_url, youtube_url, tags, category_id, game_id, is_published, is_verified, copy_count, download_count",
+          "id, title, slug, description, code, thumbnail_url, images, youtube_url, tags, category_id, game_id, is_published, is_verified, copy_count, download_count",
         )
         .order("created_at", { ascending: false });
       if (error) throw new Error(error.message);
@@ -127,6 +130,34 @@ function AdminScripts() {
     onError: (error: Error) => toast.error(error.message),
   });
 
+  const toggleFlag = useMutation({
+    mutationFn: async ({
+      script,
+      field,
+    }: {
+      script: ScriptRow;
+      field: "is_published" | "is_verified";
+    }) => {
+      const next = !script[field];
+      const patch =
+        field === "is_published" ? { is_published: next } : { is_verified: next };
+      const { error } = await supabase.from("scripts").update(patch).eq("id", script.id);
+      if (error) throw new Error(error.message);
+      await logAdminAction({
+        data: {
+          action: `script.${field === "is_published" ? (next ? "publish" : "unpublish") : next ? "verify" : "unverify"}`,
+          targetType: "script",
+          targetId: script.id,
+        },
+      });
+    },
+    onSuccess: () => {
+      toast.success("Script updated");
+      void queryClient.invalidateQueries({ queryKey: ["admin-scripts"] });
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
   const startEdit = (script: ScriptRow) => {
     setEditing(script);
     setForm({
@@ -135,6 +166,7 @@ function AdminScripts() {
       description: script.description ?? "",
       code: script.code,
       thumbnail_url: script.thumbnail_url ?? "",
+      images: script.images ?? [],
       youtube_url: script.youtube_url ?? "",
       tags: script.tags,
       category_id: script.category_id,
@@ -177,11 +209,23 @@ function AdminScripts() {
             onChange={(v) => setForm({ ...form, slug: v })}
             placeholder={slugify(form.title)}
           />
-          <Text
-            label="Thumbnail URL"
-            value={form.thumbnail_url ?? ""}
-            onChange={(v) => setForm({ ...form, thumbnail_url: v })}
-          />
+          <div className="sm:col-span-2">
+            <ImageUploadField
+              label="Thumbnail"
+              hint="Take a photo or pick one from your phone."
+              values={form.thumbnail_url ? [form.thumbnail_url] : []}
+              onChange={(v) => setForm({ ...form, thumbnail_url: v[0] ?? "" })}
+            />
+          </div>
+          <div className="sm:col-span-2">
+            <ImageUploadField
+              label="Screenshots"
+              hint="Add as many as you like."
+              multiple
+              values={form.images}
+              onChange={(v) => setForm({ ...form, images: v })}
+            />
+          </div>
           <Text
             label="YouTube URL"
             value={form.youtube_url ?? ""}
@@ -288,6 +332,28 @@ function AdminScripts() {
                   <div className="flex justify-end gap-1">
                     <button
                       type="button"
+                      onClick={() => toggleFlag.mutate({ script, field: "is_published" })}
+                      className="rounded-md border border-border px-2 py-1 font-mono text-[11px] text-muted-foreground hover:text-primary"
+                    >
+                      {script.is_published ? "Unpublish" : "Publish"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => toggleFlag.mutate({ script, field: "is_verified" })}
+                      className="rounded-md border border-border px-2 py-1 font-mono text-[11px] text-muted-foreground hover:text-primary"
+                    >
+                      {script.is_verified ? "Unverify" : "Verify"}
+                    </button>
+                    <Link
+                      to="/scripts/$slug"
+                      params={{ slug: script.slug }}
+                      aria-label="View script"
+                      className="rounded-md p-2 text-muted-foreground hover:text-primary"
+                    >
+                      <ExternalLink className="size-4" />
+                    </Link>
+                    <button
+                      type="button"
                       onClick={() => startEdit(script)}
                       aria-label="Edit script"
                       className="rounded-md p-2 text-muted-foreground hover:text-primary"
@@ -308,6 +374,27 @@ function AdminScripts() {
                 </td>
               </tr>
             ))}
+            {!scripts.isLoading && (scripts.data ?? []).length === 0 && (
+              <tr>
+                <td colSpan={5} className="px-4 py-14 text-center">
+                  <p className="text-sm font-semibold text-foreground">No scripts yet</p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Add your first script and it appears on the public site right away.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditing(null);
+                      setForm({ ...EMPTY });
+                      setOpen(true);
+                    }}
+                    className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground"
+                  >
+                    <Plus className="size-4" /> New script
+                  </button>
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
