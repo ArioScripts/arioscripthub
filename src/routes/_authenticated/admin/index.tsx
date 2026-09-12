@@ -66,18 +66,37 @@ function AdminOverview() {
   ];
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-      {cards.map((card) => (
-        <div key={card.label} className="rounded-xl border border-border bg-card p-5">
-          <p className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
-            {card.label}
+    <div className="space-y-8">
+      {data.scripts === 0 && (
+        <div className="rounded-2xl border border-dashed border-border bg-card p-8 text-center">
+          <p className="text-base font-semibold text-foreground">Your library is empty</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Add your first script to start building the database.
           </p>
-          <p className="mt-2 font-mono text-2xl font-bold text-foreground">
-            {card.value.toLocaleString()}
-          </p>
-          <p className="mt-1 text-xs text-muted-foreground">{card.hint}</p>
+          <Link
+            to="/admin/scripts"
+            className="mt-4 inline-block rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
+          >
+            Add a script
+          </Link>
         </div>
-      ))}
+      )}
+
+      <QuickActions />
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {cards.map((card) => (
+          <div key={card.label} className="rounded-xl border border-border bg-card p-5">
+            <p className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
+              {card.label}
+            </p>
+            <p className="mt-2 font-mono text-2xl font-bold text-foreground">
+              {card.value.toLocaleString()}
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">{card.hint}</p>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
