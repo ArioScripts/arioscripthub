@@ -139,7 +139,9 @@ function AdminScripts() {
       field: "is_published" | "is_verified";
     }) => {
       const next = !script[field];
-      const { error } = await supabase.from("scripts").update({ [field]: next }).eq("id", script.id);
+      const patch =
+        field === "is_published" ? { is_published: next } : { is_verified: next };
+      const { error } = await supabase.from("scripts").update(patch).eq("id", script.id);
       if (error) throw new Error(error.message);
       await logAdminAction({
         data: {
